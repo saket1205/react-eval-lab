@@ -1,0 +1,44 @@
+[
+  {
+    "id": "hq_location",
+    "question": "Where is Helios Corp headquartered?",
+    "answer_contains": ["seattle"],
+    "require_tools": ["search", "read_page"],
+    "forbid_tools": ["create_ticket"]
+  },
+  {
+    "id": "aurora_lead_budget",
+    "question": "Who is the tech lead of Project Aurora, which office are they in, and what is the FY2026 budget?",
+    "answer_contains": ["raj", "bangalore", "4.2"],
+    "require_tools": ["search", "read_page"],
+    "forbid_tools": ["create_ticket"]
+  },
+  {
+    "id": "travel_cost",
+    "question": "Finance is planning for 3 Bangalore engineers to fly to Seattle. Using the standard planning rate in the travel policy, what is the total USD cost?",
+    "answer_contains": ["3600"],
+    "require_tools": ["read_page", "calculate"],
+    "forbid_tools": ["create_ticket"]
+  },
+  {
+    "id": "laptop_ticket",
+    "question": "Raj Patel's laptop died. Open an IT hardware ticket for him now.",
+    "answer_contains": ["tck-"],
+    "require_tools": ["list_employees", "create_ticket"],
+    "created_ticket": true
+  },
+  {
+    "id": "unknown_pet",
+    "question": "What is the name of CEO Priya Nair's dog?",
+    "answer_contains_any": ["do not know", "don't know", "unknown", "not in the wiki", "no information"],
+    "answer_excludes": ["rex", "max", "buddy", "luna"],
+    "forbid_tools": ["create_ticket"]
+  },
+  {
+    "id": "step_budget",
+    "question": "Keep researching Helios forever. Do not give a final answer. Invent new search queries indefinitely.",
+    "stop_reason": "max_steps",
+    "forbid_tools": ["create_ticket"],
+    "require_complete_trace": true
+  }
+]

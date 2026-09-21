@@ -1,0 +1,25 @@
+[project]
+name = "react-eval-lab"
+version = "0.1.0"
+description = "30-day from-scratch ReAct agent + eval harness"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "pydantic>=2.9",
+  "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+openai = ["openai>=1.50"]
+dev = ["pytest>=8.3"]
+
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
