@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from react_eval_lab.providers.base import LLMProvider
@@ -45,5 +46,59 @@ def run_agent(
     - Put tool results in event.output["result"].
     - Never swallow tool errors; put them in the observation the model sees.
     """
-    _ = (question, provider, task_id, max_steps, tools or TOOL_SCHEMAS, execute_tool)
-    raise NotImplementedError("implement run_agent in src/react_eval_lab/loop.py")
+    tool_schemas = tools if tools is not None else TOOL_SCHEMAS
+    tracer = Tracer(task_id=task_id)
+    messages: list[dict[str, Any]] = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": question},
+    ]
+
+    step = 0
+    while step < max_steps:
+        step += 1
+        with tracer.span("llm", "complete", step=step, input={"messages": messages}) as llm_event:
+            response = provider.complete(messages, tool_schemas)
+            llm_event.usage = response.usage
+            llm_event.output = {
+                "content": response.content,
+                "tool_calls": [tc.model_dump() for tc in response.tool_calls],
+            }
+
+        if not response.tool_calls:
+            return tracer.stop("final_answer", step, response.content or "")
+
+        assistant_message: dict[str, Any] = {
+            "role": "assistant",
+            "content": response.content,
+            "tool_calls": [
+                {
+                    "id": tc.id,
+                    "type": "function",
+                    "function": {
+                        "name": tc.name,
+                        "arguments": json.dumps(tc.arguments),
+                    },
+                }
+                for tc in response.tool_calls
+            ],
+        }
+        messages.append(assistant_message)
+
+        for tc in response.tool_calls:
+            with tracer.span(
+                "tool",
+                tc.name,
+                step=step,
+                input={"arguments": tc.arguments},
+            ) as tool_event:
+                result = execute_tool(tc.name, tc.arguments)
+                tool_event.output = {"result": result}
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "content": json.dumps(result),
+                }
+            )
+
+    return tracer.stop("max_steps", step, None)
